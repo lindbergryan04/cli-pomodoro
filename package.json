@@ -1,0 +1,33 @@
+{
+  "name": "pomodoro",
+  "version": "1.0.0",
+  "description": "A terminal-style Pomodoro timer for programmers",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build": "electron-builder --mac"
+  },
+  "author": "Ryan Lindberg",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.ryanlindberg.pomodoro",
+    "productName": "Pomodoro",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"],
+      "icon": "assets/icon.png"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "fonts/**/*",
+      "assets/**/*"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self';" />
+  <title>pomodoro</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="terminal">
+    <div id="output"></div>
+    <div id="input-line">
+      <span id="input-prompt" class="pink">&gt; </span>
+      <input type="text" id="text-input" autocomplete="off" spellcheck="false" />
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

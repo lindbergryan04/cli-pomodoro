@@ -1,0 +1,162 @@
+@font-face {
+  font-family: "Miracode";
+  src: url("../fonts/Miracode.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ─── Reset & Base ──────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0c0c14;
+  --text: #d4d4d4;
+  --purple: #c792ea;
+  --pink: #ff79c6;
+  --green: #98c379;
+  --yellow: #e5c07b;
+  --red: #e06c75;
+  --cyan: #56b6c2;
+  --orange: #f78c6c;
+  --dim: #5c6370;
+  --bar-fill: #c792ea;
+  --bar-empty: #1e1e2e;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Miracode", "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  cursor: default;
+}
+
+/* ─── Terminal Container ────────────────────────────────────────── */
+
+#terminal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 44px 28px 20px 28px; /* top padding for macOS traffic lights */
+  -webkit-app-region: drag;
+}
+
+#output {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-app-region: no-drag;
+  padding-bottom: 8px;
+}
+
+/* Custom scrollbar */
+#output::-webkit-scrollbar {
+  width: 5px;
+}
+#output::-webkit-scrollbar-track {
+  background: transparent;
+}
+#output::-webkit-scrollbar-thumb {
+  background: var(--dim);
+  border-radius: 3px;
+}
+#output::-webkit-scrollbar-thumb:hover {
+  background: var(--purple);
+}
+
+/* ─── Lines ─────────────────────────────────────────────────────── */
+
+.line {
+  white-space: pre;
+  min-height: 1em;
+  line-height: 1.7;
+}
+
+.line-timer {
+  white-space: pre;
+  font-size: 40px;
+  line-height: 1.3;
+  letter-spacing: 6px;
+  margin: 4px 0;
+}
+
+/* ─── Colors ────────────────────────────────────────────────────── */
+
+.purple { color: var(--purple); }
+.pink   { color: var(--pink); }
+.green  { color: var(--green); }
+.yellow { color: var(--yellow); }
+.red    { color: var(--red); }
+.cyan   { color: var(--cyan); }
+.orange { color: var(--orange); }
+.dim    { color: var(--dim); }
+.text   { color: var(--text); }
+.bold   { font-weight: bold; }
+
+/* ─── Input Line ────────────────────────────────────────────────── */
+
+#input-line {
+  display: none;
+  align-items: center;
+  margin-top: 4px;
+  -webkit-app-region: no-drag;
+}
+
+#input-line.visible {
+  display: flex;
+}
+
+#input-prompt {
+  pointer-events: none;
+  white-space: pre;
+}
+
+#text-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--text);
+  caret-color: var(--pink);
+  padding: 0;
+}
+
+/* ─── Blinking cursor for selected items ────────────────────────── */
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ─── Subtle pulse for running timer ────────────────────────────── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
