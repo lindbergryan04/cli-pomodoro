@@ -49,6 +49,7 @@ body {
 /* ─── Terminal Container ────────────────────────────────────────── */
 
 #terminal {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -56,7 +57,26 @@ body {
   -webkit-app-region: drag;
 }
 
+#bg-art {
+  position: absolute;
+  inset: 44px 28px 20px 28px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  white-space: pre;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.7;
+  color: var(--dim);
+  opacity: 0.25;
+}
+
 #output {
+  position: relative;
+  z-index: 1;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -137,6 +157,19 @@ body {
   color: var(--text);
   caret-color: var(--pink);
   padding: 0;
+}
+
+/* ─── Love Note ────────────────────────────────────────────────── */
+
+#love-note {
+  position: absolute;
+  bottom: 6px;
+  right: 28px;
+  color: var(--pink);
+  font-size: 12px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* ─── Blinking cursor for selected items ────────────────────────── */

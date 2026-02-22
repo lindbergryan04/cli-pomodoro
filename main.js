@@ -17,10 +17,9 @@ const dataPath = path.join(app.getPath("userData"), "pomodoro-data.json");
 
 const defaults = {
   settings: {
-    theme: "violet",
-    foodEmoji: "avocado",
-    workDuration: 25,
-    shortBreakDuration: 5,
+    theme: "rose",
+    bgArt: "butterflies",
+    foodEmoji: "ladybug",
     longBreakDuration: 15,
     longBreakInterval: 4,
     autoStartBreaks: false,
@@ -29,7 +28,7 @@ const defaults = {
     alarmSound: true,
     alarmStyle: "chime",
     alarmVolume: 0.7,
-    desktopNotifications: true,
+    desktopNotifications: false,
     alwaysOnTop: false,
     dailyGoal: 8,
   },
