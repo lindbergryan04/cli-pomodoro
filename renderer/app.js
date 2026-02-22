@@ -242,6 +242,7 @@ class PomodoroApp {
       mode: "work", // "work" | "shortBreak" | "longBreak"
       totalSeconds: 0,
       remaining: 0,
+      endTime: null, // wall-clock ms when timer should hit 0
       isRunning: false,
       isPaused: false,
       sessionsCompleted: 0,
@@ -1302,6 +1303,7 @@ class PomodoroApp {
   _resumeTimer() {
     this.timer.isRunning = true;
     this.timer.isPaused = false;
+    this.timer.endTime = Date.now() + this.timer.remaining * 1000;
     if (this.timer.intervalId) clearInterval(this.timer.intervalId);
     this.timer.intervalId = setInterval(() => this._tick(), 1000);
     this._updateTray();
@@ -1310,6 +1312,7 @@ class PomodoroApp {
   _pauseTimer() {
     this.timer.isRunning = false;
     this.timer.isPaused = true;
+    this.timer.endTime = null;
     if (this.timer.intervalId) {
       clearInterval(this.timer.intervalId);
       this.timer.intervalId = null;
@@ -1325,9 +1328,8 @@ class PomodoroApp {
       this.timer.intervalId = null;
     }
     this.timer.isRunning = false;
-    // Set to paused so space → toggleTimer → _resumeTimer works
     this.timer.isPaused = true;
-    // Restore to full duration of the current session type
+    this.timer.endTime = null;
     if (this.timer.totalSeconds > 0) {
       this.timer.remaining = this.timer.totalSeconds;
     }
@@ -1335,7 +1337,6 @@ class PomodoroApp {
     this.render();
   }
 
-  // Fully clear the timer (used when leaving to menu)
   clearTimer() {
     if (this.timer.intervalId) {
       clearInterval(this.timer.intervalId);
@@ -1345,6 +1346,7 @@ class PomodoroApp {
     this.timer.isPaused = false;
     this.timer.remaining = 0;
     this.timer.totalSeconds = 0;
+    this.timer.endTime = null;
     this.timer.mode = "work";
     this.timer.sessionsCompleted = 0;
     this._updateTray();
@@ -1355,9 +1357,11 @@ class PomodoroApp {
   }
 
   _tick() {
-    if (this.timer.remaining > 0) {
-      this.timer.remaining--;
+    if (this.timer.endTime) {
+      this.timer.remaining = Math.max(0, Math.round((this.timer.endTime - Date.now()) / 1000));
+    }
 
+    if (this.timer.remaining > 0) {
       // Tick sound
       if (this.settings.tickSound && this.timer.mode === "work") {
         this.sound.playTick(this.settings.alarmVolume * 0.15);
