@@ -720,10 +720,13 @@ class PomodoroApp {
     // Active task
     if (this.activeTaskIndex >= 0 && this.tasks[this.activeTaskIndex]) {
       const task = this.tasks[this.activeTaskIndex];
+      const pomDone = task.pomodorosCompleted || 0;
+      const pomEst = task.estimate || 1;
       this.blank();
       this.w(
         ["  ▸ ", "dim"],
-        [task.name, "text"]
+        [task.name, "text"],
+        [" " + pomDone + "/" + pomEst + " " + this._emoji(), "dim"]
       );
     }
 
@@ -1552,9 +1555,19 @@ class PomodoroApp {
       this._recordSession();
 
       // Update active task
-      if (this.activeTaskIndex >= 0 && this.tasks[this.activeTaskIndex]) {
-        this.tasks[this.activeTaskIndex].pomodorosCompleted =
-          (this.tasks[this.activeTaskIndex].pomodorosCompleted || 0) + 1;
+      if (this.activeTaskIndex >= 0 && this.tasks[this.activeTaskIndex] && !this.tasks[this.activeTaskIndex].done) {
+        const task = this.tasks[this.activeTaskIndex];
+        task.pomodorosCompleted = Math.min((task.pomodorosCompleted || 0) + 1, task.estimate || 1);
+        if (task.pomodorosCompleted >= (task.estimate || 1) && !task.done) {
+          task.done = true;
+          this.activeTaskIndex = -1;
+          if (this.settings.desktopNotifications) {
+            window.api.notify({
+              title: "task complete!",
+              body: '"' + task.name + '" is done — great work!',
+            });
+          }
+        }
         this._saveTasks();
       }
 
