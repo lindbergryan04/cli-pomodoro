@@ -68,6 +68,13 @@ const THEMES = {
     "--red": "#d8a0a0", "--cyan": "#a0c8e0",
     "--orange": "#c8b8a0", "--dim": "#546070",
   },
+  crimson: {
+    "--bg": "#120a0a", "--text": "#d8d0d0",
+    "--purple": "#e06c75", "--pink": "#d45d68",
+    "--green": "#b8c8a0", "--yellow": "#d4a87c",
+    "--red": "#f44747", "--cyan": "#c08080",
+    "--orange": "#e88060", "--dim": "#6b4a4a",
+  },
 };
 
 const THEME_NAMES = Object.keys(THEMES);
