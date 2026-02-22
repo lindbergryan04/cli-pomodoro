@@ -2,6 +2,8 @@
 
 A terminal-style Pomodoro timer desktop app for programmers. Built with Electron, styled like a CLI using the [Miracode](https://github.com/IdreesInc/Miracode) monospace font.
 
+![Home](assets/demo_1.png)
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or later)
@@ -46,6 +48,8 @@ Pick a work/break split before starting:
 
 Displays a large countdown, progress bar, session dots, and active task. Auto-cycles through work and break sessions. After completing a full cycle (default 4 sessions), triggers a long break.
 
+![Timer](assets/demo_2.png)
+
 ### Tasks
 
 Manage a task list with pomodoro estimates.
@@ -59,6 +63,8 @@ Manage a task list with pomodoro estimates.
 
 Active tasks show up on the timer screen. Completed pomodoros are tracked per task.
 
+![Tasks](assets/demo_3.png)
+
 ### Stats
 
 Shows today's sessions and minutes, all-time totals, daily goal progress, streak counter, and a weekly ASCII bar chart.
@@ -66,6 +72,8 @@ Shows today's sessions and minutes, all-time totals, daily goal progress, streak
 | Key | Action |
 |---|---|
 | `c` | Clear all statistics |
+
+![Stats](assets/demo_4.png)
 
 ### Settings
 
@@ -85,6 +93,8 @@ Adjust all values inline with arrow keys.
 | Tick sound | off | Subtle tick while timer runs |
 | Notifications | on | macOS desktop notifications |
 | Always on top | off | Pin window above other apps |
+
+![Settings](assets/demo_5.png)
 
 ## Menu Bar
 
