@@ -398,6 +398,7 @@ class PomodoroApp {
 
     // Confirm state for clearing stats
     this._confirmingClear = false;
+    this._confirmingEndPomodoro = false;
   }
 
   // ─── Init ───────────────────────────────────────────────────────────
@@ -515,6 +516,7 @@ class PomodoroApp {
       if (action === "toggle") this.toggleTimer();
       else if (action === "skip") this.skipSession();
       else if (action === "reset") this.resetTimer();
+      else if (action === "end") this._enterEndPomodoroConfirm();
     });
 
     // Listen for init data (on window re-show)
@@ -564,6 +566,7 @@ class PomodoroApp {
     this.screen = screen;
     if (resetCursor) this.cursor = 0;
     this._confirmingClear = false;
+    this._confirmingEndPomodoro = false;
     this.render();
   }
 
@@ -573,6 +576,71 @@ class PomodoroApp {
     } else {
       this.go(SCREEN.MAIN_MENU);
     }
+  }
+
+  _hasActiveTimer() {
+    return this.timer.totalSeconds > 0 && this.timer.remaining > 0;
+  }
+
+  _isBreakMode() {
+    return this.timer.mode === "shortBreak" || this.timer.mode === "longBreak";
+  }
+
+  _canSkipBreak() {
+    return this._hasActiveTimer() && this._isBreakMode();
+  }
+
+  _enterEndPomodoroConfirm() {
+    if (!this._hasActiveTimer()) return;
+    if (this.screen !== SCREEN.TIMER) {
+      this.go(SCREEN.TIMER);
+    }
+    this._confirmingEndPomodoro = true;
+    this.render();
+  }
+
+  _cancelEndPomodoroConfirm() {
+    if (!this._confirmingEndPomodoro) return;
+    this._confirmingEndPomodoro = false;
+    this.render();
+  }
+
+  _confirmEndPomodoro() {
+    this._confirmingEndPomodoro = false;
+    this.clearTimer();
+    this.go(SCREEN.MAIN_MENU);
+  }
+
+  _skipBreakToFocus() {
+    if (!this._canSkipBreak()) return;
+    if (this.timer.intervalId) {
+      clearInterval(this.timer.intervalId);
+      this.timer.intervalId = null;
+    }
+    this.timer.isRunning = false;
+    this.timer.isPaused = false;
+    this.timer.endTime = null;
+    this.timer.mode = "work";
+    this.timer.totalSeconds = this.timer.workDuration * 60;
+    this.timer.remaining = this.timer.workDuration * 60;
+    this._resumeTimer();
+    this.go(SCREEN.TIMER);
+  }
+
+  _skipActiveBreakToFocusMenu() {
+    if (!this._canSkipBreak()) return;
+    if (this.timer.intervalId) {
+      clearInterval(this.timer.intervalId);
+      this.timer.intervalId = null;
+    }
+    this.timer.isRunning = false;
+    this.timer.isPaused = false;
+    this.timer.endTime = null;
+    this.timer.mode = "work";
+    this.timer.totalSeconds = this.timer.workDuration * 60;
+    this.timer.remaining = this.timer.workDuration * 60;
+    this._updateTray();
+    this.go(SCREEN.SESSION_DONE);
   }
 
   // ─── Rendering Helpers ──────────────────────────────────────────────
@@ -830,13 +898,24 @@ class PomodoroApp {
     this.w([dots, "purple"]);
 
     // Controls
-    if (this.timer.isRunning) {
-      this.help("[space] pause  [s] skip  [r] reset  [q] menu");
-    } else if (this.timer.isPaused) {
-      this.help("[space] resume  [s] skip  [r] reset  [q] menu");
-    } else {
-      this.help("[space] start  [s] skip  [r] reset  [q] menu");
+    if (this._confirmingEndPomodoro) {
+      this.blank();
+      this.w(["  end pomodoro? are you sure?", "red"]);
+      this.help("[y] yes, end pomodoro  [n] cancel");
+      return;
     }
+
+    const startPauseAction = this.timer.isRunning
+      ? "[space] pause"
+      : this.timer.isPaused
+      ? "[space] resume"
+      : "[space] start";
+    const skipBreakAction = this._canSkipBreak() ? "  [s] skip break" : "";
+    this.help(
+      startPauseAction +
+        skipBreakAction +
+        "  [r] reset  [x] end pomodoro  [q] menu"
+    );
   }
 
   // ─── Screen: Session Done ───────────────────────────────────────────
@@ -847,7 +926,7 @@ class PomodoroApp {
     // If mode is now "shortBreak"/"longBreak", that means work just ended.
     const nextIsWork = this.timer.mode === "work";
     const items = nextIsWork
-      ? ["start focus", "skip to menu"]
+      ? ["start focus"]
       : ["start break", "skip break"];
 
     this.blank();
@@ -866,7 +945,7 @@ class PomodoroApp {
       this.menuItem(item, i === this.cursor);
     });
 
-    this.help("[↑↓] navigate  [enter] select");
+    this.help(nextIsWork ? "[enter] select" : "[↑↓] navigate  [enter] select");
   }
 
   // ─── Screen: Tasks ──────────────────────────────────────────────────
@@ -1113,8 +1192,9 @@ class PomodoroApp {
     this.w(["  timer", "pink"]);
     this.sep();
     this.w(["  space         ", "text"], ["start / pause / resume", "dim"]);
-    this.w(["  s             ", "text"], ["skip current session", "dim"]);
+    this.w(["  s             ", "text"], ["skip break to focus prompt", "dim"]);
     this.w(["  r             ", "text"], ["reset session to full duration", "dim"]);
+    this.w(["  x             ", "text"], ["end pomodoro (confirm y/n)", "dim"]);
     this.w(["  q             ", "text"], ["back to main menu", "dim"]);
     this.blank();
 
@@ -1290,6 +1370,15 @@ class PomodoroApp {
   }
 
   _handleTimerKey(e) {
+    if (this._confirmingEndPomodoro) {
+      if (e.key === "y" || e.key === "Y") {
+        this._confirmEndPomodoro();
+      } else if (e.key === "n" || e.key === "N" || e.key === "Escape") {
+        this._cancelEndPomodoroConfirm();
+      }
+      return;
+    }
+
     if (e.key === " ") {
       e.preventDefault();
       this.toggleTimer();
@@ -1297,24 +1386,25 @@ class PomodoroApp {
       this.skipSession();
     } else if (e.key === "r" || e.key === "R") {
       this.resetTimer();
+    } else if (e.key === "x" || e.key === "X") {
+      this._enterEndPomodoroConfirm();
     } else if (e.key === "q" || e.key === "Escape") {
       this.go(SCREEN.MAIN_MENU);
     }
   }
 
   _handleSessionDoneKey(e) {
-    const items = 2;
-    if (this._nav(items, e)) return;
+    const nextIsWork = this.timer.mode === "work";
+    const items = nextIsWork ? 1 : 2;
+    if (items > 1 && this._nav(items, e)) return;
 
     if (e.key === "Enter") {
       if (this.cursor === 0) {
         // Start next session
         this._startNextSession();
         this.go(SCREEN.TIMER);
-      } else {
-        // Skip / go to menu
-        this.clearTimer();
-        this.go(SCREEN.MAIN_MENU);
+      } else if (!nextIsWork && this.cursor === 1) {
+        this._skipBreakToFocus();
       }
     }
 
@@ -1617,7 +1707,12 @@ class PomodoroApp {
   }
 
   skipSession() {
-    this._completeSession();
+    if (!this._canSkipBreak()) return;
+    if (this.timer.isRunning || this.timer.isPaused) {
+      this._skipActiveBreakToFocusMenu();
+    } else {
+      this._skipBreakToFocus();
+    }
   }
 
   _tick() {
@@ -1801,15 +1896,21 @@ class PomodoroApp {
   // ─── Tray Update ───────────────────────────────────────────────────
 
   _updateTray() {
+    const hasActiveTimer = this._hasActiveTimer();
+    const trayState = {
+      display: null,
+      isRunning: this.timer.isRunning,
+      mode: hasActiveTimer ? this.timer.mode : null,
+      canSkipBreak: hasActiveTimer && this._isBreakMode(),
+      hasActiveTimer,
+    };
+
     if (this.timer.isRunning || this.timer.isPaused) {
-      const mode = this.timer.mode === "work" ? "focus" : "break";
-      window.api.updateTimer({
-        display: mode + " " + this._fmt(this.timer.remaining),
-        isRunning: this.timer.isRunning,
-      });
-    } else {
-      window.api.updateTimer({ display: null, isRunning: false });
+      const modeLabel = this.timer.mode === "work" ? "focus" : "break";
+      trayState.display = modeLabel + " " + this._fmt(this.timer.remaining);
     }
+
+    window.api.updateTimer(trayState);
   }
 
   // ─── Utility ────────────────────────────────────────────────────────

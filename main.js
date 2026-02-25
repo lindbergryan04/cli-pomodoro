@@ -21,7 +21,7 @@ const defaults = {
     theme: "violet",
     uiFont: DEFAULT_UI_FONT_FILE,
     bgArt: "butterflies",
-    bgArtBrightness: 25,
+    bgArtBrightness: 50,
     foodEmoji: "avocado",
     longBreakDuration: 15,
     longBreakInterval: 4,
@@ -161,6 +161,9 @@ function createTray() {
 function updateTrayMenu(timerState) {
   if (!tray) return;
 
+  const hasActiveTimer = Boolean(timerState?.hasActiveTimer);
+  const canSkipBreak = Boolean(timerState?.canSkipBreak);
+
   const template = [
     {
       label: timerState?.display || "pomodoro",
@@ -171,14 +174,30 @@ function updateTrayMenu(timerState) {
       label: timerState?.isRunning ? "pause" : "start",
       click: () => mainWindow?.webContents.send("tray-action", "toggle"),
     },
-    {
-      label: "skip",
-      click: () => mainWindow?.webContents.send("tray-action", "skip"),
-    },
-    {
-      label: "reset",
-      click: () => mainWindow?.webContents.send("tray-action", "reset"),
-    },
+    ...(canSkipBreak
+      ? [
+          {
+            label: "skip break",
+            click: () => mainWindow?.webContents.send("tray-action", "skip"),
+          },
+        ]
+      : []),
+    ...(hasActiveTimer
+      ? [
+          {
+            label: "reset",
+            click: () => mainWindow?.webContents.send("tray-action", "reset"),
+          },
+          {
+            label: "end pomodoro...",
+            click: () => {
+              mainWindow?.show();
+              mainWindow?.focus();
+              mainWindow?.webContents.send("tray-action", "end");
+            },
+          },
+        ]
+      : []),
     { type: "separator" },
     {
       label: "show window",

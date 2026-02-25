@@ -24,8 +24,9 @@ npm start
 | `←` `→` or `h` `l` | Adjust setting values |
 | `q` or `Esc` | Go back |
 | `Space` | Start / pause / resume timer |
-| `s` | Skip current session |
+| `s` | Skip break (opens focus prompt) |
 | `r` | Reset timer |
+| `x` | End pomodoro (confirm `y/n`) |
 | `t` | Jump to running timer from any screen |
 | `⌘ + Shift + P` | Show/hide window (global shortcut) |
 
@@ -100,7 +101,7 @@ Adjust all values inline with arrow keys.
 
 ## Menu Bar
 
-When the timer is running, the current mode and countdown display in your macOS menu bar (e.g. `focus 24:59`). Right-click the tray icon for start/pause/skip/reset controls.
+When the timer is running, the current mode and countdown display in your macOS menu bar (e.g. `focus 24:59`). Right-click the tray icon for start/pause, reset, and end controls, plus `skip break` when the current session is a break.
 
 ## Data
 
