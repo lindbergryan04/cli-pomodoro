@@ -16,6 +16,7 @@
 }
 
 :root {
+  --ui-font-family: "Miracode";
   --bg: #0c0c14;
   --text: #d4d4d4;
   --purple: #c792ea;
@@ -37,7 +38,7 @@ body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: "Miracode", "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: var(--ui-font-family), "SF Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 14px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;

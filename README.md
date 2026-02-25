@@ -81,6 +81,7 @@ Adjust all values inline with arrow keys.
 
 | Setting | Default | Description |
 |---|---|---|
+| UI font | Miracode | Cycles through `.ttf` files found in the `fonts/` folder |
 | Focus duration | 25 min | Length of work sessions |
 | Short break | 5 min | Break between work sessions |
 | Long break | 15 min | Break after a full cycle |
@@ -113,4 +114,3 @@ npm run build
 Produces a `.dmg` in the `dist/` directory.
 
 'dist/Pomodoro-1.0.0-arm64.dmg'
-

@@ -14,10 +14,12 @@ const fs = require("fs");
 // ─── Persistent JSON Storage ────────────────────────────────────────────────
 
 const dataPath = path.join(app.getPath("userData"), "pomodoro-data.json");
+const DEFAULT_UI_FONT_FILE = "Miracode.ttf";
 
 const defaults = {
   settings: {
     theme: "violet",
+    uiFont: DEFAULT_UI_FONT_FILE,
     bgArt: "butterflies",
     foodEmoji: "avocado",
     longBreakDuration: 15,
@@ -62,6 +64,19 @@ function saveData(data) {
     fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
   } catch (err) {
     console.error("Failed to save data:", err);
+  }
+}
+
+function getAvailableFonts() {
+  const fontsPath = path.join(__dirname, "fonts");
+  try {
+    const fonts = fs
+      .readdirSync(fontsPath)
+      .filter((file) => /\.ttf$/i.test(file))
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    return fonts.length > 0 ? fonts : [DEFAULT_UI_FONT_FILE];
+  } catch {
+    return [DEFAULT_UI_FONT_FILE];
   }
 }
 
@@ -195,6 +210,7 @@ function updateTrayMenu(timerState) {
 
 function setupIPC() {
   ipcMain.handle("load-data", () => loadData());
+  ipcMain.handle("list-fonts", () => getAvailableFonts());
 
   ipcMain.handle("save-data", (_, data) => {
     saveData(data);

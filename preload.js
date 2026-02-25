@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
   loadData: () => ipcRenderer.invoke("load-data"),
+  listFonts: () => ipcRenderer.invoke("list-fonts"),
   saveData: (data) => ipcRenderer.invoke("save-data", data),
   updateTimer: (state) => ipcRenderer.send("timer-update", state),
   notify: (data) => ipcRenderer.send("notify", data),

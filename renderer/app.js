@@ -196,9 +196,12 @@ const BG_ART = {
 };
 
 const BG_ART_NAMES = Object.keys(BG_ART);
+const DEFAULT_UI_FONT_FILE = "Miracode.ttf";
+const UI_FONT_FAMILY = "PomodoroRuntimeFont";
 
 const SETTING_DEFS = [
   { key: "theme", name: "color theme", type: "theme" },
+  { key: "uiFont", name: "ui font", type: "font" },
   { key: "bgArt", name: "background art", type: "bgArt" },
   { key: "foodEmoji", name: "icon", type: "food" },
   { key: "longBreakDuration", name: "long break", unit: "min", min: 1, max: 60, step: 1 },
@@ -366,6 +369,7 @@ class PomodoroApp {
     this.settings = {};
     this.tasks = [];
     this.stats = {};
+    this.availableFonts = [];
 
     // Timer
     this.timer = {
@@ -414,6 +418,62 @@ class PomodoroApp {
     el.textContent = art;
   }
 
+  fontLabel(filename) {
+    if (!filename) return "Miracode";
+    return filename.replace(/\.[^/.]+$/, "");
+  }
+
+  _fontList() {
+    return this.availableFonts.length > 0 ? this.availableFonts : [DEFAULT_UI_FONT_FILE];
+  }
+
+  _ensureUIFontInList() {
+    if (!this.availableFonts.includes(DEFAULT_UI_FONT_FILE)) {
+      this.availableFonts.push(DEFAULT_UI_FONT_FILE);
+      this.availableFonts.sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: "base" })
+      );
+    }
+  }
+
+  registerFontFace(filename) {
+    const safeFile = encodeURIComponent(filename || DEFAULT_UI_FONT_FILE);
+    const fontUrl = "../fonts/" + safeFile;
+    let styleEl = document.getElementById("dynamic-font-face");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "dynamic-font-face";
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent =
+      '@font-face{font-family:"' +
+      UI_FONT_FAMILY +
+      '";src:url("' +
+      fontUrl +
+      '") format("truetype");font-weight:normal;font-style:normal;}';
+  }
+
+  applyUIFont(filename) {
+    const root = document.documentElement;
+    const selected = filename || DEFAULT_UI_FONT_FILE;
+    try {
+      this.registerFontFace(selected);
+      root.style.setProperty("--ui-font-family", '"' + UI_FONT_FAMILY + '"');
+    } catch {
+      root.style.setProperty("--ui-font-family", '"Miracode"');
+    }
+  }
+
+  _cycleFont(delta) {
+    const fonts = this._fontList();
+    const current = this.settings.uiFont || DEFAULT_UI_FONT_FILE;
+    const idx = fonts.indexOf(current);
+    const safeIdx = idx >= 0 ? idx : 0;
+    this.settings.uiFont = fonts[(safeIdx + delta + fonts.length) % fonts.length];
+    this.applyUIFont(this.settings.uiFont);
+  }
+
   // ─── Init ───────────────────────────────────────────────────────────
 
   async init() {
@@ -423,9 +483,23 @@ class PomodoroApp {
     this.tasks = data.tasks || [];
     this.stats = data.stats;
 
-    // Apply saved theme and background
+    try {
+      const fonts = await window.api.listFonts();
+      this.availableFonts = Array.isArray(fonts) ? fonts : [];
+    } catch {
+      this.availableFonts = [];
+    }
+    this._ensureUIFontInList();
+
+    if (!this._fontList().includes(this.settings.uiFont)) {
+      this.settings.uiFont = DEFAULT_UI_FONT_FILE;
+      await this._saveSettings();
+    }
+
+    // Apply saved appearance settings
     this.applyTheme(this.settings.theme || "violet");
     this.applyBgArt(this.settings.bgArt || "none");
+    this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
 
     // Listen for tray actions
     window.api.onTrayAction((action) => {
@@ -435,10 +509,17 @@ class PomodoroApp {
     });
 
     // Listen for init data (on window re-show)
-    window.api.onInitData((data) => {
+    window.api.onInitData(async (data) => {
       this.settings = data.settings;
       this.tasks = data.tasks || [];
       this.stats = data.stats;
+      if (!this._fontList().includes(this.settings.uiFont)) {
+        this.settings.uiFont = DEFAULT_UI_FONT_FILE;
+        await this._saveSettings();
+      }
+      this.applyTheme(this.settings.theme || "violet");
+      this.applyBgArt(this.settings.bgArt || "none");
+      this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
       this.render();
     });
 
@@ -948,6 +1029,8 @@ class PomodoroApp {
 
       if (def.type === "theme") {
         displayVal = "◂ " + (val || "violet") + " ▸";
+      } else if (def.type === "font") {
+        displayVal = "◂ " + this.fontLabel(val || DEFAULT_UI_FONT_FILE) + " ▸";
       } else if (def.type === "bgArt") {
         displayVal = "◂ " + (val || "none") + " ▸";
       } else if (def.type === "food") {
@@ -1338,6 +1421,8 @@ class PomodoroApp {
         const idx = THEME_NAMES.indexOf(this.settings.theme || "violet");
         this.settings.theme = THEME_NAMES[(idx - 1 + THEME_NAMES.length) % THEME_NAMES.length];
         this.applyTheme(this.settings.theme);
+      } else if (def.type === "font") {
+        this._cycleFont(-1);
       } else if (def.type === "bgArt") {
         const idx = BG_ART_NAMES.indexOf(this.settings.bgArt || "none");
         this.settings.bgArt = BG_ART_NAMES[(idx - 1 + BG_ART_NAMES.length) % BG_ART_NAMES.length];
@@ -1365,6 +1450,8 @@ class PomodoroApp {
         const idx = THEME_NAMES.indexOf(this.settings.theme || "violet");
         this.settings.theme = THEME_NAMES[(idx + 1) % THEME_NAMES.length];
         this.applyTheme(this.settings.theme);
+      } else if (def.type === "font") {
+        this._cycleFont(1);
       } else if (def.type === "bgArt") {
         const idx = BG_ART_NAMES.indexOf(this.settings.bgArt || "none");
         this.settings.bgArt = BG_ART_NAMES[(idx + 1) % BG_ART_NAMES.length];
@@ -1392,6 +1479,10 @@ class PomodoroApp {
         const idx = THEME_NAMES.indexOf(this.settings.theme || "violet");
         this.settings.theme = THEME_NAMES[(idx + 1) % THEME_NAMES.length];
         this.applyTheme(this.settings.theme);
+        this._saveSettings();
+        this.render();
+      } else if (def.type === "font") {
+        this._cycleFont(1);
         this._saveSettings();
         this.render();
       } else if (def.type === "bgArt") {
