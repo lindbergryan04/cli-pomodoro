@@ -203,6 +203,7 @@ const SETTING_DEFS = [
   { key: "theme", name: "color theme", type: "theme" },
   { key: "uiFont", name: "ui font", type: "font" },
   { key: "bgArt", name: "background art", type: "bgArt" },
+  { key: "bgArtBrightness", name: "bg art brightness", unit: "%", min: 0, max: 100, step: 5 },
   { key: "foodEmoji", name: "icon", type: "food" },
   { key: "longBreakDuration", name: "long break", unit: "min", min: 1, max: 60, step: 1 },
   { key: "longBreakInterval", name: "long break after", unit: "sessions", min: 2, max: 10, step: 1 },
@@ -418,6 +419,13 @@ class PomodoroApp {
     el.textContent = art;
   }
 
+  applyBgArtBrightness(percent) {
+    const root = document.documentElement;
+    const value = Number.isFinite(Number(percent)) ? Number(percent) : 25;
+    const clamped = Math.min(100, Math.max(0, value));
+    root.style.setProperty("--bg-art-opacity", String(clamped / 100));
+  }
+
   fontLabel(filename) {
     if (!filename) return "Miracode";
     return filename.replace(/\.[^/.]+$/, "");
@@ -499,6 +507,7 @@ class PomodoroApp {
     // Apply saved appearance settings
     this.applyTheme(this.settings.theme || "violet");
     this.applyBgArt(this.settings.bgArt || "none");
+    this.applyBgArtBrightness(this.settings.bgArtBrightness ?? 25);
     this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
 
     // Listen for tray actions
@@ -519,6 +528,7 @@ class PomodoroApp {
       }
       this.applyTheme(this.settings.theme || "violet");
       this.applyBgArt(this.settings.bgArt || "none");
+      this.applyBgArtBrightness(this.settings.bgArtBrightness ?? 25);
       this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
       this.render();
     });
@@ -1442,6 +1452,9 @@ class PomodoroApp {
         let val = def.scale ? Math.round(this.settings[def.key] * scale) : this.settings[def.key];
         val = Math.max(def.min, val - step);
         this.settings[def.key] = def.scale ? val / scale : val;
+        if (def.key === "bgArtBrightness") {
+          this.applyBgArtBrightness(this.settings.bgArtBrightness);
+        }
       }
       this._saveSettings();
       this.render();
@@ -1471,6 +1484,9 @@ class PomodoroApp {
         let val = def.scale ? Math.round(this.settings[def.key] * scale) : this.settings[def.key];
         val = Math.min(def.max, val + step);
         this.settings[def.key] = def.scale ? val / scale : val;
+        if (def.key === "bgArtBrightness") {
+          this.applyBgArtBrightness(this.settings.bgArtBrightness);
+        }
       }
       this._saveSettings();
       this.render();

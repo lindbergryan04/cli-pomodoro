@@ -21,6 +21,7 @@ const defaults = {
     theme: "violet",
     uiFont: DEFAULT_UI_FONT_FILE,
     bgArt: "butterflies",
+    bgArtBrightness: 25,
     foodEmoji: "avocado",
     longBreakDuration: 15,
     longBreakInterval: 4,

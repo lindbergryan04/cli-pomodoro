@@ -27,6 +27,7 @@
   --cyan: #56b6c2;
   --orange: #f78c6c;
   --dim: #5c6370;
+  --bg-art-opacity: 0.25;
   --bar-fill: #c792ea;
   --bar-empty: #1e1e2e;
 }
@@ -72,7 +73,7 @@ body {
   font-size: inherit;
   line-height: 1.7;
   color: var(--dim);
-  opacity: 0.25;
+  opacity: var(--bg-art-opacity);
 }
 
 #output {

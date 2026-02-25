@@ -82,6 +82,7 @@ Adjust all values inline with arrow keys.
 | Setting | Default | Description |
 |---|---|---|
 | UI font | Miracode | Cycles through `.ttf` files found in the `fonts/` folder |
+| Background art brightness | 25% | Controls the intensity of the background ASCII art |
 | Focus duration | 25 min | Length of work sessions |
 | Short break | 5 min | Break between work sessions |
 | Long break | 15 min | Break after a full cycle |
