@@ -246,7 +246,7 @@ const EMOJI_NAMES = Object.keys(EMOJIS);
 
 // ─── Alarm Sounds ───────────────────────────────────────────────────────────
 
-const ALARM_NAMES = ["chime", "bell", "pulse", "digital", "gong", "bird"];
+const ALARM_NAMES = ["chime", "bell", "pulse", "digital", "gong", "bird", "lofi", "softbit", "drift"];
 
 // ─── Sound Engine ───────────────────────────────────────────────────────────
 
@@ -346,6 +346,45 @@ class SoundEngine {
     // Repeat after a short pause
     freqs.forEach((freq, i) => {
       this._note(ctx, t + 0.9 + i * 0.12, freq, "sine", vol * 0.18, 0.01, 0.08, 0.1);
+    });
+  }
+
+  // Warm lo-fi chord stabs with gentle layering
+  _alarm_lofi(vol) {
+    const ctx = this._ctx();
+    const t = ctx.currentTime;
+    const chordA = [261.63, 329.63, 392.0];
+    const chordB = [246.94, 311.13, 369.99];
+    chordA.forEach((freq) => {
+      this._note(ctx, t, freq, "triangle", vol * 0.1, 0.05, 0.8, 1.0);
+      this._note(ctx, t + 0.03, freq * 0.997, "sine", vol * 0.05, 0.05, 0.95, 1.1);
+    });
+    chordB.forEach((freq) => {
+      this._note(ctx, t + 0.55, freq, "triangle", vol * 0.08, 0.05, 0.65, 0.85);
+    });
+  }
+
+  // Soft 8-bit style melody with rounded transients
+  _alarm_softbit(vol) {
+    const ctx = this._ctx();
+    const t = ctx.currentTime;
+    const seq = [523.25, 659.25, 783.99, 659.25, 523.25];
+    seq.forEach((freq, i) => {
+      const at = t + i * 0.16;
+      this._note(ctx, at, freq, "triangle", vol * 0.11, 0.01, 0.12, 0.16);
+      this._note(ctx, at, freq, "square", vol * 0.04, 0.004, 0.08, 0.11);
+    });
+  }
+
+  // Slow tape-like drifting tones
+  _alarm_drift(vol) {
+    const ctx = this._ctx();
+    const t = ctx.currentTime;
+    const seq = [392.0, 440.0, 493.88, 523.25, 493.88, 440.0];
+    seq.forEach((freq, i) => {
+      const at = t + i * 0.18;
+      this._note(ctx, at, freq, "sine", vol * 0.12, 0.02, 0.18, 0.24);
+      this._note(ctx, at + 0.02, freq * 0.5, "triangle", vol * 0.06, 0.03, 0.22, 0.28);
     });
   }
 
@@ -506,6 +545,17 @@ class PomodoroApp {
     this.applyUIFont(this.settings.uiFont);
   }
 
+  _normalizeAlarmStyle(style) {
+    return ALARM_NAMES.includes(style) ? style : "chime";
+  }
+
+  _cycleAlarmStyle(delta = 1) {
+    const current = this._normalizeAlarmStyle(this.settings.alarmStyle);
+    const idx = ALARM_NAMES.indexOf(current);
+    this.settings.alarmStyle = ALARM_NAMES[(idx + delta + ALARM_NAMES.length) % ALARM_NAMES.length];
+    this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
+  }
+
   // ─── Init ───────────────────────────────────────────────────────────
 
   async init() {
@@ -529,6 +579,11 @@ class PomodoroApp {
     const clampedFontSize = this._clampUIFontSize(this.settings.uiFontSize);
     if (this.settings.uiFontSize !== clampedFontSize) {
       this.settings.uiFontSize = clampedFontSize;
+      shouldSaveSettings = true;
+    }
+    const normalizedAlarmStyle = this._normalizeAlarmStyle(this.settings.alarmStyle);
+    if (this.settings.alarmStyle !== normalizedAlarmStyle) {
+      this.settings.alarmStyle = normalizedAlarmStyle;
       shouldSaveSettings = true;
     }
     if (shouldSaveSettings) {
@@ -569,6 +624,11 @@ class PomodoroApp {
       const clampedFontSize = this._clampUIFontSize(this.settings.uiFontSize);
       if (this.settings.uiFontSize !== clampedFontSize) {
         this.settings.uiFontSize = clampedFontSize;
+        shouldSaveSettings = true;
+      }
+      const normalizedAlarmStyle = this._normalizeAlarmStyle(this.settings.alarmStyle);
+      if (this.settings.alarmStyle !== normalizedAlarmStyle) {
+        this.settings.alarmStyle = normalizedAlarmStyle;
         shouldSaveSettings = true;
       }
       if (shouldSaveSettings) {
@@ -1196,7 +1256,7 @@ class PomodoroApp {
         const name_ = val || "avocado";
         displayVal = "◂ " + EMOJIS[name_] + " " + name_ + " ▸";
       } else if (def.type === "alarm") {
-        displayVal = "◂ " + (val || "chime") + " ▸";
+        displayVal = "◂ " + this._normalizeAlarmStyle(val) + " ▸";
       } else if (def.type === "bool") {
         displayVal = val ? "on" : "off";
       } else if (def.scale) {
@@ -1600,9 +1660,7 @@ class PomodoroApp {
         const idx = EMOJI_NAMES.indexOf(this.settings.foodEmoji || "avocado");
         this.settings.foodEmoji = EMOJI_NAMES[(idx - 1 + EMOJI_NAMES.length) % EMOJI_NAMES.length];
       } else if (def.type === "alarm") {
-        const idx = ALARM_NAMES.indexOf(this.settings.alarmStyle || "chime");
-        this.settings.alarmStyle = ALARM_NAMES[(idx - 1 + ALARM_NAMES.length) % ALARM_NAMES.length];
-        this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
+        this._cycleAlarmStyle(-1);
       } else if (def.type === "bool") {
         this.settings[def.key] = !this.settings[def.key];
         if (def.key === "hideFocusTimer") this._updateTray();
@@ -1635,9 +1693,7 @@ class PomodoroApp {
         const idx = EMOJI_NAMES.indexOf(this.settings.foodEmoji || "avocado");
         this.settings.foodEmoji = EMOJI_NAMES[(idx + 1) % EMOJI_NAMES.length];
       } else if (def.type === "alarm") {
-        const idx = ALARM_NAMES.indexOf(this.settings.alarmStyle || "chime");
-        this.settings.alarmStyle = ALARM_NAMES[(idx + 1) % ALARM_NAMES.length];
-        this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
+        this._cycleAlarmStyle(1);
       } else if (def.type === "bool") {
         this.settings[def.key] = !this.settings[def.key];
         if (def.key === "hideFocusTimer") this._updateTray();
@@ -1678,9 +1734,7 @@ class PomodoroApp {
         this._saveSettings();
         this.render();
       } else if (def.type === "alarm") {
-        const idx = ALARM_NAMES.indexOf(this.settings.alarmStyle || "chime");
-        this.settings.alarmStyle = ALARM_NAMES[(idx + 1) % ALARM_NAMES.length];
-        this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
+        this._cycleAlarmStyle(1);
         this._saveSettings();
         this.render();
       } else if (def.type === "bool") {
