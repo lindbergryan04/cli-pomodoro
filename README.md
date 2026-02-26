@@ -82,7 +82,8 @@ Adjust all values inline with arrow keys.
 
 | Setting | Default | Description |
 |---|---|---|
-| UI font | Miracode | Cycles through `.ttf` files found in the `fonts/` folder |
+| UI font | Miracode | Cycles through `.ttf/.otf` files found in the `fonts/` folder |
+| Font size | 14px | Adjusts UI text scale from `12px` to `20px` |
 | Background art brightness | 25% | Controls the intensity of the background ASCII art |
 | Focus duration | 25 min | Length of work sessions |
 | Short break | 5 min | Break between work sessions |

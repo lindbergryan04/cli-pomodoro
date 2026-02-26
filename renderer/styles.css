@@ -17,6 +17,7 @@
 
 :root {
   --ui-font-family: "Miracode";
+  --ui-font-size: 14px;
   --bg: #0c0c14;
   --text: #d4d4d4;
   --purple: #c792ea;
@@ -40,7 +41,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--ui-font-family), "SF Mono", "Fira Code", "Cascadia Code", monospace;
-  font-size: 14px;
+  font-size: var(--ui-font-size);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -111,7 +112,7 @@ body {
 
 .line-timer {
   white-space: pre;
-  font-size: 40px;
+  font-size: calc(var(--ui-font-size) * 2.8571);
   line-height: 1.3;
   letter-spacing: 6px;
   margin: 4px 0;
@@ -168,7 +169,7 @@ body {
   bottom: 6px;
   right: 28px;
   color: var(--pink);
-  font-size: 12px;
+  font-size: calc(var(--ui-font-size) * 0.8571);
   opacity: 0.5;
   pointer-events: none;
   z-index: 2;

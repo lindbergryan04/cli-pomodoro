@@ -198,10 +198,14 @@ const BG_ART = {
 const BG_ART_NAMES = Object.keys(BG_ART);
 const DEFAULT_UI_FONT_FILE = "Miracode.ttf";
 const UI_FONT_FAMILY = "PomodoroRuntimeFont";
+const DEFAULT_UI_FONT_SIZE = 14;
+const MIN_UI_FONT_SIZE = 12;
+const MAX_UI_FONT_SIZE = 20;
 
 const SETTING_DEFS = [
   { key: "theme", name: "color theme", type: "theme" },
   { key: "uiFont", name: "ui font", type: "font" },
+  { key: "uiFontSize", name: "font size", unit: "px", min: MIN_UI_FONT_SIZE, max: MAX_UI_FONT_SIZE, step: 1 },
   { key: "bgArt", name: "background art", type: "bgArt" },
   { key: "bgArtBrightness", name: "bg art brightness", unit: "%", min: 0, max: 100, step: 5 },
   { key: "foodEmoji", name: "icon", type: "food" },
@@ -436,17 +440,27 @@ class PomodoroApp {
     return this.availableFonts.length > 0 ? this.availableFonts : [DEFAULT_UI_FONT_FILE];
   }
 
-  _ensureUIFontInList() {
-    if (!this.availableFonts.includes(DEFAULT_UI_FONT_FILE)) {
-      this.availableFonts.push(DEFAULT_UI_FONT_FILE);
-      this.availableFonts.sort((a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: "base" })
-      );
+  _resolveDefaultUIFont() {
+    const fonts = this._fontList();
+    if (fonts.includes(DEFAULT_UI_FONT_FILE)) {
+      return DEFAULT_UI_FONT_FILE;
     }
+    return fonts[0] || DEFAULT_UI_FONT_FILE;
+  }
+
+  _clampUIFontSize(size) {
+    const parsed = Number(size);
+    if (!Number.isFinite(parsed)) {
+      return DEFAULT_UI_FONT_SIZE;
+    }
+    return Math.min(MAX_UI_FONT_SIZE, Math.max(MIN_UI_FONT_SIZE, Math.round(parsed)));
   }
 
   registerFontFace(filename) {
-    const safeFile = encodeURIComponent(filename || DEFAULT_UI_FONT_FILE);
+    const selectedFile = filename || this._resolveDefaultUIFont();
+    const lowerName = selectedFile.toLowerCase();
+    const format = lowerName.endsWith(".otf") ? "opentype" : "truetype";
+    const safeFile = encodeURIComponent(selectedFile);
     const fontUrl = "../fonts/" + safeFile;
     let styleEl = document.getElementById("dynamic-font-face");
     if (!styleEl) {
@@ -460,12 +474,14 @@ class PomodoroApp {
       UI_FONT_FAMILY +
       '";src:url("' +
       fontUrl +
-      '") format("truetype");font-weight:normal;font-style:normal;}';
+      '") format("' +
+      format +
+      '");font-weight:normal;font-style:normal;}';
   }
 
   applyUIFont(filename) {
     const root = document.documentElement;
-    const selected = filename || DEFAULT_UI_FONT_FILE;
+    const selected = filename || this._resolveDefaultUIFont();
     try {
       this.registerFontFace(selected);
       root.style.setProperty("--ui-font-family", '"' + UI_FONT_FAMILY + '"');
@@ -474,9 +490,15 @@ class PomodoroApp {
     }
   }
 
+  applyUIFontSize(sizePx) {
+    const root = document.documentElement;
+    const clamped = this._clampUIFontSize(sizePx);
+    root.style.setProperty("--ui-font-size", clamped + "px");
+  }
+
   _cycleFont(delta) {
     const fonts = this._fontList();
-    const current = this.settings.uiFont || DEFAULT_UI_FONT_FILE;
+    const current = this.settings.uiFont || this._resolveDefaultUIFont();
     const idx = fonts.indexOf(current);
     const safeIdx = idx >= 0 ? idx : 0;
     this.settings.uiFont = fonts[(safeIdx + delta + fonts.length) % fonts.length];
@@ -498,10 +520,17 @@ class PomodoroApp {
     } catch {
       this.availableFonts = [];
     }
-    this._ensureUIFontInList();
-
+    let shouldSaveSettings = false;
     if (!this._fontList().includes(this.settings.uiFont)) {
-      this.settings.uiFont = DEFAULT_UI_FONT_FILE;
+      this.settings.uiFont = this._resolveDefaultUIFont();
+      shouldSaveSettings = true;
+    }
+    const clampedFontSize = this._clampUIFontSize(this.settings.uiFontSize);
+    if (this.settings.uiFontSize !== clampedFontSize) {
+      this.settings.uiFontSize = clampedFontSize;
+      shouldSaveSettings = true;
+    }
+    if (shouldSaveSettings) {
       await this._saveSettings();
     }
 
@@ -509,7 +538,8 @@ class PomodoroApp {
     this.applyTheme(this.settings.theme || "violet");
     this.applyBgArt(this.settings.bgArt || "none");
     this.applyBgArtBrightness(this.settings.bgArtBrightness ?? 25);
-    this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
+    this.applyUIFont(this.settings.uiFont || this._resolveDefaultUIFont());
+    this.applyUIFontSize(this.settings.uiFontSize);
 
     // Listen for tray actions
     window.api.onTrayAction((action) => {
@@ -524,14 +554,30 @@ class PomodoroApp {
       this.settings = data.settings;
       this.tasks = data.tasks || [];
       this.stats = data.stats;
+      try {
+        const fonts = await window.api.listFonts();
+        this.availableFonts = Array.isArray(fonts) ? fonts : [];
+      } catch {
+        this.availableFonts = [];
+      }
+      let shouldSaveSettings = false;
       if (!this._fontList().includes(this.settings.uiFont)) {
-        this.settings.uiFont = DEFAULT_UI_FONT_FILE;
+        this.settings.uiFont = this._resolveDefaultUIFont();
+        shouldSaveSettings = true;
+      }
+      const clampedFontSize = this._clampUIFontSize(this.settings.uiFontSize);
+      if (this.settings.uiFontSize !== clampedFontSize) {
+        this.settings.uiFontSize = clampedFontSize;
+        shouldSaveSettings = true;
+      }
+      if (shouldSaveSettings) {
         await this._saveSettings();
       }
       this.applyTheme(this.settings.theme || "violet");
       this.applyBgArt(this.settings.bgArt || "none");
       this.applyBgArtBrightness(this.settings.bgArtBrightness ?? 25);
-      this.applyUIFont(this.settings.uiFont || DEFAULT_UI_FONT_FILE);
+      this.applyUIFont(this.settings.uiFont || this._resolveDefaultUIFont());
+      this.applyUIFontSize(this.settings.uiFontSize);
       this.render();
     });
 
@@ -1119,7 +1165,7 @@ class PomodoroApp {
       if (def.type === "theme") {
         displayVal = "◂ " + (val || "violet") + " ▸";
       } else if (def.type === "font") {
-        displayVal = "◂ " + this.fontLabel(val || DEFAULT_UI_FONT_FILE) + " ▸";
+        displayVal = "◂ " + this.fontLabel(val || this._resolveDefaultUIFont()) + " ▸";
       } else if (def.type === "bgArt") {
         displayVal = "◂ " + (val || "none") + " ▸";
       } else if (def.type === "food") {
@@ -1544,6 +1590,8 @@ class PomodoroApp {
         this.settings[def.key] = def.scale ? val / scale : val;
         if (def.key === "bgArtBrightness") {
           this.applyBgArtBrightness(this.settings.bgArtBrightness);
+        } else if (def.key === "uiFontSize") {
+          this.applyUIFontSize(this.settings.uiFontSize);
         }
       }
       this._saveSettings();
@@ -1576,6 +1624,8 @@ class PomodoroApp {
         this.settings[def.key] = def.scale ? val / scale : val;
         if (def.key === "bgArtBrightness") {
           this.applyBgArtBrightness(this.settings.bgArtBrightness);
+        } else if (def.key === "uiFontSize") {
+          this.applyUIFontSize(this.settings.uiFontSize);
         }
       }
       this._saveSettings();

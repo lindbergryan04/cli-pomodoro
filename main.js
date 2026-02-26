@@ -20,6 +20,7 @@ const defaults = {
   settings: {
     theme: "violet",
     uiFont: DEFAULT_UI_FONT_FILE,
+    uiFontSize: 14,
     bgArt: "butterflies",
     bgArtBrightness: 50,
     foodEmoji: "avocado",
@@ -73,7 +74,7 @@ function getAvailableFonts() {
   try {
     const fonts = fs
       .readdirSync(fontsPath)
-      .filter((file) => /\.ttf$/i.test(file))
+      .filter((file) => /\.(ttf|otf)$/i.test(file))
       .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
     return fonts.length > 0 ? fonts : [DEFAULT_UI_FONT_FILE];
   } catch {
