@@ -219,6 +219,7 @@ const SETTING_DEFS = [
   { key: "alarmVolume", name: "alarm volume", unit: "%", min: 10, max: 100, step: 10, scale: 100 },
   { key: "tickSound", name: "tick sound", type: "bool" },
   { key: "desktopNotifications", name: "notifications", type: "bool" },
+  { key: "hideFocusTimer", name: "hide focus timer", type: "bool" },
   { key: "alwaysOnTop", name: "always on top", type: "bool" },
 ];
 
@@ -636,6 +637,29 @@ class PomodoroApp {
     return this._hasActiveTimer() && this._isBreakMode();
   }
 
+  shouldMaskFocusTimer() {
+    return Boolean(this.settings.hideFocusTimer) && this.timer.mode === "work" && this.timer.isRunning;
+  }
+
+  shouldHideFocusProgressBar() {
+    return Boolean(this.settings.hideFocusTimer) && this.timer.mode === "work";
+  }
+
+  focusInProgressText() {
+    return "focus session in progress.";
+  }
+
+  timerStatusText({ includePausedSuffix = false } = {}) {
+    if (this.shouldMaskFocusTimer()) {
+      return this.focusInProgressText();
+    }
+
+    const mode = this.timer.mode === "work" ? "focus" : "break";
+    const time = this._fmt(this.timer.remaining);
+    const paused = includePausedSuffix && this.timer.isPaused ? " (paused)" : "";
+    return mode + " " + time + paused;
+  }
+
   _enterEndPomodoroConfirm() {
     if (!this._hasActiveTimer()) return;
     if (this.screen !== SCREEN.TIMER) {
@@ -843,10 +867,7 @@ class PomodoroApp {
     // When timer is active, replace "start" with live status
     let startLabel = "start";
     if (this.timer.isRunning || this.timer.isPaused) {
-      const mode = this.timer.mode === "work" ? "focus" : "break";
-      const time = this._fmt(this.timer.remaining);
-      const paused = this.timer.isPaused ? " (paused)" : "";
-      startLabel = mode + " " + time + paused;
+      startLabel = this.timerStatusText({ includePausedSuffix: true });
     }
 
     const items = [startLabel, "tasks", "stats", "settings", "help", "quit"];
@@ -913,14 +934,20 @@ class PomodoroApp {
     this.blank();
 
     // Big timer display
-    this.wTimer("  " + this._fmt(this.timer.remaining), color);
+    if (this.shouldMaskFocusTimer()) {
+      this.w("  " + this.focusInProgressText());
+    } else {
+      this.wTimer("  " + this._fmt(this.timer.remaining), color);
+    }
 
     this.blank();
 
     // Progress bar
-    const elapsed = this.timer.totalSeconds - this.timer.remaining;
-    const percent = this.timer.totalSeconds > 0 ? elapsed / this.timer.totalSeconds : 0;
-    this.progressBar(percent);
+    if (!this.shouldHideFocusProgressBar()) {
+      const elapsed = this.timer.totalSeconds - this.timer.remaining;
+      const percent = this.timer.totalSeconds > 0 ? elapsed / this.timer.totalSeconds : 0;
+      this.progressBar(percent);
+    }
 
     // Active task
     if (this.activeTaskIndex >= 0 && this.tasks[this.activeTaskIndex]) {
@@ -1044,10 +1071,8 @@ class PomodoroApp {
     if (this.timer.isRunning || this.timer.isPaused) {
       this.blank();
       this.sep();
-      const mode = this.timer.mode === "work" ? "focus" : "break";
-      const time = this._fmt(this.timer.remaining);
       this.w(
-        ["  " + mode + " " + time, "purple"],
+        ["  " + this.timerStatusText(), "purple"],
         ["  [t] timer", "dim"]
       );
     }
@@ -1134,9 +1159,8 @@ class PomodoroApp {
     if (this.timer.isRunning || this.timer.isPaused) {
       this.blank();
       this.sep();
-      const mode = this.timer.mode === "work" ? "focus" : "break";
       this.w(
-        ["  " + mode + " " + this._fmt(this.timer.remaining), "purple"],
+        ["  " + this.timerStatusText(), "purple"],
         ["  [t] timer", "dim"]
       );
     }
@@ -1206,9 +1230,8 @@ class PomodoroApp {
     if (this.timer.isRunning || this.timer.isPaused) {
       this.blank();
       this.sep();
-      const mode = this.timer.mode === "work" ? "focus" : "break";
       this.w(
-        ["  " + mode + " " + this._fmt(this.timer.remaining), "purple"],
+        ["  " + this.timerStatusText(), "purple"],
         ["  [t] timer", "dim"]
       );
     }
@@ -1582,6 +1605,7 @@ class PomodoroApp {
         this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
       } else if (def.type === "bool") {
         this.settings[def.key] = !this.settings[def.key];
+        if (def.key === "hideFocusTimer") this._updateTray();
       } else {
         const step = def.step || 1;
         const scale = def.scale || 1;
@@ -1616,6 +1640,7 @@ class PomodoroApp {
         this.sound.playAlarm(this.settings.alarmVolume, this.settings.alarmStyle);
       } else if (def.type === "bool") {
         this.settings[def.key] = !this.settings[def.key];
+        if (def.key === "hideFocusTimer") this._updateTray();
       } else {
         const step = def.step || 1;
         const scale = def.scale || 1;
@@ -1660,6 +1685,7 @@ class PomodoroApp {
         this.render();
       } else if (def.type === "bool") {
         this.settings[def.key] = !this.settings[def.key];
+        if (def.key === "hideFocusTimer") this._updateTray();
         this._saveSettings();
         this.render();
       }
@@ -1956,8 +1982,7 @@ class PomodoroApp {
     };
 
     if (this.timer.isRunning || this.timer.isPaused) {
-      const modeLabel = this.timer.mode === "work" ? "focus" : "break";
-      trayState.display = modeLabel + " " + this._fmt(this.timer.remaining);
+      trayState.display = this.timerStatusText();
     }
 
     window.api.updateTimer(trayState);

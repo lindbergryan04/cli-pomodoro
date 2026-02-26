@@ -34,6 +34,7 @@ const defaults = {
     alarmVolume: 0.5,
     desktopNotifications: false,
     alwaysOnTop: false,
+    hideFocusTimer: false,
     dailyGoal: 8,
   },
   tasks: [],

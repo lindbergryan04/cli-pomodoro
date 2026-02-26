@@ -92,6 +92,7 @@ Adjust all values inline with arrow keys.
 | Daily goal | 8 | Target focus sessions per day |
 | Auto-start breaks | off | Start breaks automatically |
 | Auto-start focus | off | Start work sessions automatically |
+| Hide focus timer | off | Replaces the running focus countdown with `focus session in progress.` |
 | Alarm sound | on | Chime when a session ends |
 | Alarm volume | 70% | Volume of the alarm chime |
 | Tick sound | off | Subtle tick while timer runs |
@@ -102,7 +103,7 @@ Adjust all values inline with arrow keys.
 
 ## Menu Bar
 
-When the timer is running, the current mode and countdown display in your macOS menu bar (e.g. `focus 24:59`). Right-click the tray icon for start/pause, reset, and end controls, plus `skip break` when the current session is a break.
+When the timer is running, the current mode and countdown display in your macOS menu bar (e.g. `focus 24:59`). If `Hide focus timer` is enabled, a running focus session shows `focus session in progress.` instead of the countdown. Right-click the tray icon for start/pause, reset, and end controls, plus `skip break` when the current session is a break.
 
 ## Data
 
